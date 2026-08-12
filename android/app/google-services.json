@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "975925310656",
+    "project_id": "flutter-easyenglish",
+    "storage_bucket": "flutter-easyenglish.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:975925310656:android:2f4a07edae323554b2e925",
+        "android_client_info": {
+          "package_name": "com.easyenglish.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "975925310656-tqr6kstktfbss5unrlqkhu390oftthl4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.easyenglish.app",
+            "certificate_hash": "70c495c1545f1c2e29f33b2327437de29aef6f8c"
+          }
+        },
+        {
+          "client_id": "975925310656-12l2fvjfejqtp16v71the86ld79bqblu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7Jl0_bw7ZwaxmEdHNU9CnE4v1w7-wNiQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "975925310656-12l2fvjfejqtp16v71the86ld79bqblu.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "975925310656-4510dmhj37bsuejeq1cc1ml9da7eibjg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.easyenglish"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
