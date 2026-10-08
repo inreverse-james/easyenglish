@@ -1,4 +1,5 @@
 {
     "dart.flutterSdkPath": "C:\\flutter",
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.compile.nullAnalysis.mode": "automatic"
 }

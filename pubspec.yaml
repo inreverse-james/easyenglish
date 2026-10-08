@@ -43,6 +43,8 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   build_runner: ^2.7.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true
@@ -51,3 +53,18 @@ flutter:
   assets:
     - assets/avatars/
     - assets/images/
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"
+
+flutter_native_splash:
+  color: "#F2F2F2"             # 👈 배경색 (원하는 Hex 색상 코드 입력)
+  image: "assets/splash.png"   # 👈 띄울 이미지 경로
+  android: true
+  ios: true
+
+  android_12:
+    color: "#F2F2F2"             
+    image: "assets/splash.png"
