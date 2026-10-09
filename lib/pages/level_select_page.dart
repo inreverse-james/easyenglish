@@ -16,15 +16,15 @@ class LevelSelectPage extends StatefulWidget {
 }
 
 class _LevelSelectPageState extends State<LevelSelectPage> {
-  // 소프트 라벤더 톤 컬러
-  static const Color _primary = Color(0xFF8D85D6);
+  // 심플한 블루 & 화이트 컬러
+  static const Color _primary = Color(0xFF1769FF);
   static const List<Color> _primaryGradient = [
-    Color(0xFFA99FEE),
-    Color(0xFF8D85D6)
+    Color(0xFF3984FF),
+    Color(0xFF1769FF)
   ];
-  static const Color _primaryLight = Color(0xFFF3F1FC);
-  static const Color _textDark = Color(0xFF2B2A33);
-  static const Color _textMuted = Color(0xFFADAABD);
+  static const Color _primaryLight = Color(0xFFEEF4FF);
+  static const Color _textDark = Color(0xFF172033);
+  static const Color _textMuted = Color(0xFF8792A5);
 
   final WordDataService _wordDataService = WordDataService();
 
@@ -62,28 +62,26 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7FB),
+      backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 20,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFEFEAFF),
-                Color(0xFFD8D1FF),
-                Color(0xFFC8C1FD),
-              ],
-            ),
-          ),
-        ),
+        surfaceTintColor: Colors.transparent,
+        flexibleSpace: Container(color: Colors.white),
         title: Row(
           children: [
-            const Text('🏆', style: TextStyle(fontSize: 16)),
+            Container(
+              width: 30.w,
+              height: 30.w,
+              decoration: BoxDecoration(
+                color: _primary,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              alignment: Alignment.center,
+              child: Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20.sp)),
+            ),
             SizedBox(width: 8.w),
             Text(
               "English Study",
@@ -145,22 +143,11 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
                 ),
               ],
             ),
-            SizedBox(height: 10.h),
-            Text(
-              "📚 학습 레벨 선택",
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: const Color(0xFF4A4758),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             SizedBox(height: 12.h),
             ...List.generate(levels.length, (i) {
-              final selected = i == -1;
+              final selected = i == -1; // 선택된 상태 로직은 유지
 
-              // 레벨별 이모지 - 요청하신 이미지 그대로 실제 이모지 글자로 구현
               final emojis = ['🌱', '🌿', '🌳', '⛰️', '🏅'];
-
               final subs = [
                 "Beginner Level",
                 "Elementary Level",
@@ -170,66 +157,64 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
               ];
 
               return Container(
-                margin: EdgeInsets.only(bottom: 7.h),
+                margin: EdgeInsets.only(bottom: 12.h), // 간격 넓힘
                 decoration: BoxDecoration(
-                  gradient: selected
-                      ? const LinearGradient(colors: _primaryGradient)
-                      : null,
+                  gradient: selected ? const LinearGradient(colors: _primaryGradient) : null,
                   color: selected ? null : Colors.white,
-                  borderRadius: BorderRadius.circular(16.r),
-                  border: selected
-                      ? null
-                      : Border.all(color: const Color(0xFFF0EFF6)),
+                  borderRadius: BorderRadius.circular(20.r), // 모서리 더 둥글게
+                  // 테두리(border) 제거하고 그림자(boxShadow) 적용
+                  boxShadow: selected ? [
+                     BoxShadow(
+                        color: _primary.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                  ] : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: ListTile(
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 2.h,
-                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                   leading: Container(
-                    width: 34.w,
-                    height: 34.w,
+                    width: 44.w, // 크기 키움
+                    height: 44.w,
                     decoration: BoxDecoration(
-                      color: selected
-                          ? Colors.white.withValues(alpha: 0.22)
-                          : _primaryLight,
+                      color: selected ? Colors.white.withValues(alpha: 0.22) : _primaryLight,
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       emojis[i % emojis.length],
-                      style: TextStyle(fontSize: 15.sp),
+                      style: TextStyle(fontSize: 20.sp), // 이모지 크기 키움
                     ),
                   ),
                   title: Text(
                     levels[i],
                     style: TextStyle(
                       color: selected ? Colors.white : _textDark,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5.sp,
+                      fontWeight: FontWeight.w800, // 굵기 강조
+                      fontSize: 15.sp,
                     ),
                   ),
-                  subtitle: Text(
-                    subs[i % subs.length],
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      color: selected ? Colors.white70 : _textMuted,
+                  subtitle: Padding(
+                    padding: EdgeInsets.only(top: 4.h),
+                    child: Text(
+                      subs[i % subs.length],
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w500,
+                        color: selected ? Colors.white70 : Colors.grey.shade500,
+                      ),
                     ),
                   ),
-                  trailing: Container(
-                    width: 24.w,
-                    height: 24.w,
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? Colors.white.withValues(alpha: 0.22)
-                          : const Color(0xFFF5F5F9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.chevron_right,
-                      color: selected ? Colors.white : _primary,
-                      size: 16.sp,
-                    ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: selected ? Colors.white : Colors.grey.shade400,
+                    size: 24.sp,
                   ),
                   onTap: () {
                     Navigator.push(
@@ -264,7 +249,7 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
               "📝 단어 시험 선택",
               style: TextStyle(
                 fontSize: 13.sp,
-                color: const Color(0xFF4A4758),
+                color: const Color(0xFF344054),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -303,9 +288,9 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color.fromARGB(255, 207, 201, 250),
-                    Color.fromARGB(255, 167, 160, 226),
-                    Color.fromARGB(255, 162, 154, 228),
+                    Color(0xFF3984FF),
+                    Color(0xFF1769FF),
+                    Color(0xFF1769FF),
                   ],
                 ),
                 boxShadow: const [
@@ -353,7 +338,7 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
               height: 50.h,
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFE7E4F5)),
+                  side: const BorderSide(color: Color(0xFFD6E4FF)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999.r),
                   ),
@@ -396,10 +381,10 @@ class _LevelSelectPageState extends State<LevelSelectPage> {
           value: value,
           isExpanded: true,
           icon: Icon(Icons.expand_more,
-              color: const Color(0xFFC7C4D6), size: 16.sp),
+              color: const Color(0xFF98A2B3), size: 16.sp),
           style: TextStyle(
             fontSize: 12.5.sp,
-            color: const Color(0xFF4A4758),
+            color: const Color(0xFF344054),
             fontWeight: FontWeight.w500,
           ),
           items: items

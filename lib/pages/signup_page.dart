@@ -69,12 +69,12 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               const Text(
                 '환영합니다!',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFF2B2A33)), // 폰트 크기 및 두께 강화
               ),
               const SizedBox(height: 8),
               const Text(
                 'Google 계정으로 시작하거나 게스트로 체험해보세요.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 40),
               if (_isLoading)
@@ -98,11 +98,11 @@ class _SignupPageState extends State<SignupPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black87,
-                      side: BorderSide(color: Colors.grey.shade300),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(16), // 완전 둥근(999) 대신 약간 둥근(16) 모서리로 모던하게
                       ),
-                      elevation: 0,
+                      elevation: 2, // 약간의 그림자 추가
+                      shadowColor: Colors.black.withValues(alpha: 0.1),
                     ),
                   ),
                 ),

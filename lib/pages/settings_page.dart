@@ -505,11 +505,17 @@ class _SettingsPageState extends State<SettingsPage> {
               // 프로필 카드
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+                padding: EdgeInsets.symmetric(vertical: 32.h, horizontal: 20.w), // 여백 조정
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(24.r), // 더 둥글게
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -517,9 +523,21 @@ class _SettingsPageState extends State<SettingsPage> {
                       onTap: _showAvatarSelectionDialog,
                       child: Stack(
                         children: [
-                          CircleAvatar(
-                            radius: 44.r,
-                            backgroundImage: profileImage,
+                          Container( // 아바타에 은은한 섀도우 추가
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                )
+                              ]
+                            ),
+                            child: CircleAvatar(
+                              radius: 48.r, // 약간 키움
+                              backgroundImage: profileImage,
+                            ),
                           ),
                           Positioned(
                             bottom: 0,

@@ -709,23 +709,32 @@ class _WordQuizPageState extends State<WordQuizPage> {
                     SizedBox(height: 16.h),
 
                     Container(
-                      padding: EdgeInsets.symmetric(vertical: 30.h),
+                      padding: EdgeInsets.symmetric(vertical: 40.h),
                       decoration: BoxDecoration(
-                        color: _primaryLight,
-                        borderRadius: BorderRadius.circular(20.r),
+                        color: Colors.white, // 배경 화이트로
+                        borderRadius: BorderRadius.circular(24.r),
+                        boxShadow: [ // 그림자 부여
+                          BoxShadow(
+                            color: _primary.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 5),
+                          )
+                        ]
                       ),
                       child: Column(
                         children: [
                           Text(currentWord.word,
                               style: TextStyle(
-                                  fontSize: 32.sp, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 6.h),
+                                  fontSize: 36.sp, // 더 크게
+                                  fontWeight: FontWeight.w900,
+                                  color: _textDark)),
+                          SizedBox(height: 8.h),
                           Text('[${currentWord.pronunciation}]',
-                              style: TextStyle(color: Colors.grey.shade600)),
+                              style: TextStyle(color: Colors.grey.shade500, fontSize: 16.sp, fontWeight: FontWeight.w500)),
                         ],
                       ),
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: 20.h),
 
                     Column(
                       children: options.asMap().entries.map((entry) {
@@ -733,19 +742,22 @@ class _WordQuizPageState extends State<WordQuizPage> {
                         final option = entry.value;
                         final isSelected = _selectedMeaning == option;
 
-                        return AnimatedContainer(
+                       return AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
-                          margin: EdgeInsets.symmetric(vertical: 4.h),
+                          margin: EdgeInsets.symmetric(vertical: 6.h),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10.r),
+                            borderRadius: BorderRadius.circular(16.r),
+                            color: isSelected ? _primaryLight : Colors.white, // 선택 안되었을 땐 화이트
+                            boxShadow: [ // 미세한 그림자
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
                             border: Border.all(
-                                color: isSelected
-                                    ? _primary
-                                    : defaultBorderColor,
-                                width: 1.5),
-                            color: isSelected
-                                ? _primaryLight
-                                : Colors.grey.shade50,
+                                color: isSelected ? _primary : Colors.transparent, // 선택 시에만 테두리
+                                width: 2),
                           ),
                           child: Material(
                             color: Colors.transparent,
