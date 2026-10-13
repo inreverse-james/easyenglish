@@ -1,4 +1,4 @@
-package com.easyenglish.app
+package com.easyenglishmate.app
 
 import io.flutter.embedding.android.FlutterActivity
 

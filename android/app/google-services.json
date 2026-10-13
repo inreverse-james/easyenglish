@@ -1,48 +1,48 @@
 {
   "project_info": {
-    "project_number": "975925310656",
-    "project_id": "flutter-easyenglish",
-    "storage_bucket": "flutter-easyenglish.firebasestorage.app"
+    "project_number": "224869144778",
+    "project_id": "easyenglishmate",
+    "storage_bucket": "easyenglishmate.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:975925310656:android:2f4a07edae323554b2e925",
+        "mobilesdk_app_id": "1:224869144778:android:e5dedb0042465f8447fc33",
         "android_client_info": {
-          "package_name": "com.easyenglish.app"
+          "package_name": "com.easyenglishmate.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "975925310656-tqr6kstktfbss5unrlqkhu390oftthl4.apps.googleusercontent.com",
+          "client_id": "224869144778-il9bidim6ne9voukuad11gqh48d2ef52.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.easyenglish.app",
-            "certificate_hash": "70c495c1545f1c2e29f33b2327437de29aef6f8c"
+            "package_name": "com.easyenglishmate.app",
+            "certificate_hash": "f55351e69d5545763998fd85991310051e9e0e80"
           }
         },
         {
-          "client_id": "975925310656-12l2fvjfejqtp16v71the86ld79bqblu.apps.googleusercontent.com",
+          "client_id": "224869144778-6v4k5770i8laljug93r1hu1i68n3q6e0.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyD7Jl0_bw7ZwaxmEdHNU9CnE4v1w7-wNiQ"
+          "current_key": "AIzaSyCqhzd1e8kieOgxrMRbJitrnrmBp0nYw9s"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "975925310656-12l2fvjfejqtp16v71the86ld79bqblu.apps.googleusercontent.com",
+              "client_id": "224869144778-6v4k5770i8laljug93r1hu1i68n3q6e0.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "975925310656-4510dmhj37bsuejeq1cc1ml9da7eibjg.apps.googleusercontent.com",
+              "client_id": "224869144778-pucl56isu2g08qis7rms7dtmnq267hv4.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.easyenglish"
+                "bundle_id": "com.easyenglishmate"
               }
             }
           ]

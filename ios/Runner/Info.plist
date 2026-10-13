@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Easyenglish</string>
+		<string>Easy English</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>easyenglish</string>
+		<string>Easy English</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -49,5 +49,18 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
-	</dict>
+		<key>GADApplicationIdentifier</key>
+		<string>ca-app-pub-3940256099942544~1458002511</string>
+	                <key>CFBundleURLTypes</key>
+                <array>
+                        <dict>
+                                <key>CFBundleURLSchemes</key>
+                                <array>
+                                        <string>com.googleusercontent.apps.224869144778-pucl56isu2g08qis7rms7dtmnq267hv4</string>
+                                </array>
+                        </dict>
+                </array>
+                <key>GIDClientID</key>
+                <string>224869144778-pucl56isu2g08qis7rms7dtmnq267hv4.apps.googleusercontent.com</string>
+</dict>
 </plist>

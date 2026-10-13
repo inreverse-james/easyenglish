@@ -41,52 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBdO7NAZzdZd8KY3jc8LeNGgWJ_iUDS73Y',
-    appId: '1:975925310656:web:626fbdae3619a0d6b2e925',
-    messagingSenderId: '975925310656',
-    projectId: 'flutter-easyenglish',
-    authDomain: 'flutter-easyenglish.firebaseapp.com',
-    storageBucket: 'flutter-easyenglish.firebasestorage.app',
-    measurementId: 'G-WZ68T8M9XC',
+    apiKey: 'AIzaSyB32U5YZERN23rXMpB7wXmp0z7KIIlrC48',
+    appId: '1:224869144778:web:a431fd9311851c3f47fc33',
+    messagingSenderId: '224869144778',
+    projectId: 'easyenglishmate',
+    authDomain: 'easyenglishmate.firebaseapp.com',
+    storageBucket: 'easyenglishmate.firebasestorage.app',
+    measurementId: 'G-RWVX5HL1FT',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyD7Jl0_bw7ZwaxmEdHNU9CnE4v1w7-wNiQ',
-    appId: '1:975925310656:android:ff3f60543b838330b2e925',
-    messagingSenderId: '975925310656',
-    projectId: 'flutter-easyenglish',
-    storageBucket: 'flutter-easyenglish.firebasestorage.app',
+    apiKey: 'AIzaSyCqhzd1e8kieOgxrMRbJitrnrmBp0nYw9s',
+    appId: '1:224869144778:android:e5dedb0042465f8447fc33',
+    messagingSenderId: '224869144778',
+    projectId: 'easyenglishmate',
+    storageBucket: 'easyenglishmate.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA1ic66Exdx-0tw2KmEPdZMLooeKvgmrxQ',
-    appId: '1:975925310656:ios:894e2aceabf063c8b2e925',
-    messagingSenderId: '975925310656',
-    projectId: 'flutter-easyenglish',
-    storageBucket: 'flutter-easyenglish.firebasestorage.app',
-    androidClientId: '975925310656-8dtahr5q159n88gjoruf9rq7n71r9o29.apps.googleusercontent.com',
-    iosClientId: '975925310656-4510dmhj37bsuejeq1cc1ml9da7eibjg.apps.googleusercontent.com',
-    iosBundleId: 'com.easyenglish',
+    apiKey: 'AIzaSyC6xioi-l_wIYmqhKO7HBHmHdwrpJZVoqI',
+    appId: '1:224869144778:ios:f8972f71b23ae59547fc33',
+    messagingSenderId: '224869144778',
+    projectId: 'easyenglishmate',
+    storageBucket: 'easyenglishmate.firebasestorage.app',
+    iosBundleId: 'com.easyenglishmate',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA1ic66Exdx-0tw2KmEPdZMLooeKvgmrxQ',
     appId: '1:975925310656:ios:894e2aceabf063c8b2e925',
     messagingSenderId: '975925310656',
-    projectId: 'flutter-easyenglish',
-    storageBucket: 'flutter-easyenglish.firebasestorage.app',
+    projectId: 'easyenglishmate',
+    storageBucket: 'easyenglishmate.firebasestorage.app',
     androidClientId: '975925310656-8dtahr5q159n88gjoruf9rq7n71r9o29.apps.googleusercontent.com',
     iosClientId: '975925310656-4510dmhj37bsuejeq1cc1ml9da7eibjg.apps.googleusercontent.com',
-    iosBundleId: 'com.easyenglish',
+    iosBundleId: 'com.easyenglishmate',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyBdO7NAZzdZd8KY3jc8LeNGgWJ_iUDS73Y',
     appId: '1:975925310656:web:87204edddba78e2db2e925',
     messagingSenderId: '975925310656',
-    projectId: 'flutter-easyenglish',
-    authDomain: 'flutter-easyenglish.firebaseapp.com',
-    storageBucket: 'flutter-easyenglish.firebasestorage.app',
+    projectId: 'easyenglishmate',
+    authDomain: 'easyenglishmate.firebaseapp.com',
+    storageBucket: 'easyenglishmate.firebasestorage.app',
     measurementId: 'G-TJ8EXQ6341',
   );
 

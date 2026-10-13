@@ -2,142 +2,206 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:easyenglish/theme/app_theme.dart';
 import 'package:easyenglish/services/auth_service.dart';
 import 'package:easyenglish/services/nickname_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key, required String userId});
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // 새 디자인 컨셉 색상 (소프트 라벤더 톤)
-  static const Color _primary = Color(0xFF8D85D6);
-  static const Color _primaryLight = Color(0xFFF3F1FC);
-  static const Color _textDark = Color(0xFF2B2A33);
-
   final AuthService _authService = AuthService();
   final NicknameService _nicknameService = NicknameService();
 
-  // 프로필 정보
-  String _organization = '';
-
-  // 아바타 선택
-  int _selectedAvatarIndex = -1;
-  final List<String> _defaultAvatars = [
-    'assets/avatars/avatar1.png',
-    'assets/avatars/avatar2.png',
-    'assets/avatars/avatar3.png',
-    'assets/avatars/avatar4.png',
-    'assets/avatars/avatar5.png',
-    'assets/avatars/avatar6.png',
-    'assets/avatars/avatar7.png',
-    'assets/avatars/avatar8.png',
-    'assets/avatars/avatar9.png',
-    'assets/avatars/avatar10.png',
-  ];
-
-  // 비동기 작업의 상태를 추적하기 위한 Future 객체
-  late Future<void> _loadSettingsFuture;
+  // 아바타 선택 (-1: 구글 프로필 사진 사용)
+  int _selectedAvatarIndex = 0;
+  bool _isLoaded = false;
+  final List<String> _defaultAvatars =
+      List.generate(10, (i) => 'assets/avatars/avatar${i + 1}.png');
 
   @override
   void initState() {
     super.initState();
-    debugPrint('SettingsPage: initState() 호출');
-    _loadSettingsFuture = _loadSettings();
+    _loadSettings();
   }
 
   Future<void> _loadSettings() async {
-    debugPrint('SettingsPage: _loadSettings() 시작');
     try {
       final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getInt('selectedAvatarIndex') ?? 0;
+      if (!mounted) return;
       setState(() {
-        _selectedAvatarIndex = prefs.getInt('selectedAvatarIndex') ?? 0;
-        _organization = prefs.getString('organization') ?? '';
+        _selectedAvatarIndex =
+            (saved >= -1 && saved < _defaultAvatars.length) ? saved : 0;
+        _isLoaded = true;
       });
-      debugPrint('SettingsPage: _loadSettings() 완료');
     } catch (e) {
-      debugPrint('SettingsPage: _loadSettings() 실패: $e');
-      rethrow;
+      debugPrint('SettingsPage: 설정 로딩 실패: $e');
+      if (!mounted) return;
+      setState(() => _isLoaded = true);
     }
   }
 
-  Future<void> _saveSettings() async {
+  Future<void> _saveAvatarIndex() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('selectedAvatarIndex', _selectedAvatarIndex);
-    await prefs.setString('organization', _organization);
   }
 
-  String _getDisplayName(User? user) {
-    if (user == null) return "게스트";
+  // ------------------------------ 표시용 값 ------------------------------
+  String _displayName(User user) {
     final dn = user.displayName;
     if (dn != null && dn.isNotEmpty) return dn;
-    if (user.isAnonymous) return "게스트 사용자"; // 닉네임이 아직 없는 예외적인 경우 대비
+    if (user.isAnonymous) return '게스트 사용자';
     final em = user.email;
     if (em != null && em.isNotEmpty) return em.split('@')[0];
-    return "사용자";
+    return '사용자';
   }
 
-  String _getUserId(User? user) {
-    if (user == null) return "로그인 정보 없음";
-
-    if (user.isAnonymous) {
-      return "게스트 사용자";
-    }
-
-    if (user.email != null && user.email!.isNotEmpty) {
-      return user.email!;
-    }
-
-    return "사용자";
+  String _accountLabel(User user) {
+    if (user.isAnonymous) return '게스트 계정';
+    final em = user.email;
+    if (em != null && em.isNotEmpty) return em;
+    return 'Google 계정';
   }
 
-  // 프로필 편집 다이얼로그
-  void _showProfileEditDialog() {
-    final User? user = FirebaseAuth.instance.currentUser;
+  ImageProvider _profileImage(User user) {
+    final photoUrl = user.photoURL;
+    if (_selectedAvatarIndex == -1 && photoUrl != null && photoUrl.isNotEmpty) {
+      return NetworkImage(photoUrl);
+    }
+    final idx = (_selectedAvatarIndex >= 0 &&
+            _selectedAvatarIndex < _defaultAvatars.length)
+        ? _selectedAvatarIndex
+        : 0;
+    return AssetImage(_defaultAvatars[idx]);
+  }
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ------------------------------ 닉네임 ------------------------------
+  void _showNicknameDialog() {
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
     showDialog(
       context: context,
-      builder: (dialogContext) => _NicknameEditDialog(
+      builder: (_) => _NicknameEditDialog(
         user: user,
         nicknameService: _nicknameService,
         authService: _authService,
-        primary: _primary,
         onSaved: () {
-          setState(() {});
-          _saveSettings();
+          if (mounted) setState(() {});
         },
       ),
     );
   }
 
-  // 게스트로 시작하기
-  Future<void> _signInAnonymously() async {
-    try {
-      await _authService.signInAsGuest();
-      if (mounted) {
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('게스트로 로그인했습니다.')),
+  // ------------------------------ 아바타 ------------------------------
+  void _showAvatarSheet() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final photoUrl = user.photoURL;
+    final hasGooglePhoto = photoUrl != null && photoUrl.isNotEmpty;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '아바타 선택',
+                  style: TextStyle(
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Flexible(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                    ),
+                    itemCount: _defaultAvatars.length + (hasGooglePhoto ? 1 : 0),
+                    itemBuilder: (_, index) {
+                      final isGoogleItem = hasGooglePhoto && index == 0;
+                      final avatarIndex = hasGooglePhoto ? index - 1 : index;
+                      final selected = isGoogleItem
+                          ? _selectedAvatarIndex == -1
+                          : _selectedAvatarIndex == avatarIndex;
+
+                      return GestureDetector(
+                        onTap: () async {
+                          setState(() => _selectedAvatarIndex =
+                              isGoogleItem ? -1 : avatarIndex);
+                          await _saveAvatarIndex();
+
+                          if (!isGoogleItem) {
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .set({
+                              'avatar': _defaultAvatars[avatarIndex],
+                            }, SetOptions(merge: true));
+                          }
+
+                          if (sheetContext.mounted) {
+                            Navigator.pop(sheetContext);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selected
+                                  ? AppColors.primary
+                                  : Colors.transparent,
+                              width: 3,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: AppColors.background,
+                            backgroundImage: isGoogleItem
+                                ? NetworkImage(photoUrl!) as ImageProvider
+                                : AssetImage(_defaultAvatars[avatarIndex]),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('게스트 로그인 실패: $e')),
-        );
-      }
-    }
+      },
+    );
   }
 
-  // 구글 로그인 / 계정 연동
-  // - 게스트(익명) 상태라면 기존 데이터를 유지한 채 구글 계정으로 "연동"합니다.
-  // - 이미 구글 계정으로 로그인된 상태라면 다른 구글 계정으로 전환합니다.
+  // ------------------------------ 로그인 / 연동 ------------------------------
   Future<void> _signInWithGoogle() async {
     try {
       final result = await _authService.signInWithGoogle();
@@ -145,77 +209,84 @@ class _SettingsPageState extends State<SettingsPage> {
       String message;
       switch (result.type) {
         case GoogleSignInResultType.linked:
-          message = 'Google 계정과 연동되었습니다! 기존 데이터는 유지됩니다.';
+          message = 'Google 계정과 연동되었어요. 기존 데이터는 유지됩니다.';
           break;
         case GoogleSignInResultType.switchedToExistingAccount:
-          message = '이미 사용 중인 Google 계정이라 해당 계정으로 로그인했습니다.';
+          message = '이미 사용 중인 Google 계정이라 해당 계정으로 로그인했어요.';
           break;
         case GoogleSignInResultType.signedIn:
-          message = '구글 계정으로 로그인했습니다!';
+          message = 'Google 계정으로 로그인했어요.';
           break;
       }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
-        setState(() {});
-      }
+      _snack(message);
+      if (mounted) setState(() {});
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그인 실패: ${e.message}')),
-        );
-      }
+      _snack('로그인에 실패했어요. ${e.message ?? e.code}');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('알 수 없는 오류 발생: $e')),
-        );
-      }
+      _snack('알 수 없는 오류가 발생했어요. $e');
     }
+  }
+
+  // ------------------------------ 로그아웃 ------------------------------
+  Future<void> _onLogoutTap(User user) async {
+    // 게스트는 로그아웃하면 그 계정으로 다시 돌아올 방법이 없으므로 한 번 더 확인합니다.
+    if (user.isAnonymous) {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('로그아웃'),
+          content: const Text(
+            '게스트 계정은 로그아웃하면 다시 불러올 수 없어요.\n'
+            '기록을 유지하려면 먼저 Google 계정과 연동해 주세요.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+              child: const Text('그래도 로그아웃'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+    }
+    await _signOut();
   }
 
   Future<void> _signOut() async {
+    // await 이후에는 context를 안전하게 쓸 수 없으므로 미리 가져옵니다.
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await _authService.signOut();
-      if (mounted) {
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('로그아웃했습니다.')),
-        );
-      }
+      // 설정 화면이 홈 위에 쌓여 있으므로, 첫 화면(= 로그인 상태에 따라 바뀌는 화면)까지 돌아갑니다.
+      navigator.popUntil((route) => route.isFirst);
+      messenger.showSnackBar(const SnackBar(content: Text('로그아웃했어요.')));
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('로그아웃 실패: $e')),
-        );
-      }
+      messenger.showSnackBar(SnackBar(content: Text('로그아웃에 실패했어요. $e')));
     }
   }
 
-  // 회원 탈퇴 확인 다이얼로그
+  // ------------------------------ 회원 탈퇴 ------------------------------
   void _showDeleteAccountDialog(User user) {
-    final bool isGuest = user.isAnonymous;
-
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
         title: const Text('회원 탈퇴'),
         content: Text(
-          isGuest
-              ? '탈퇴하면 지금까지의 게스트 기록(닉네임, 랭킹 등)이 모두 삭제되며 '
-                  '복구할 수 없습니다.\n계속하시겠습니까?'
-              : '탈퇴하면 계정과 관련된 모든 데이터(닉네임, 랭킹 등)가 삭제되며 '
-                  '복구할 수 없습니다.\n계속하시겠습니까?',
+          user.isAnonymous
+              ? '탈퇴하면 게스트 계정의 데이터(닉네임 등)가 모두 삭제되며 '
+                  '복구할 수 없어요.\n계속할까요?'
+              : '탈퇴하면 계정과 관련된 모든 데이터(닉네임 등)가 삭제되며 '
+                  '복구할 수 없어요.\n계속할까요?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
             child: const Text('취소'),
           ),
           TextButton(
@@ -223,7 +294,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Navigator.pop(dialogContext);
               _deleteAccount();
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red.shade600),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             child: const Text('탈퇴하기'),
           ),
         ],
@@ -231,565 +302,285 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 실제 탈퇴 처리. 세션이 오래돼서 재인증이 필요하면(구글 계정에 한해)
-  // 자동으로 재인증 후 한 번 더 시도한다.
   Future<void> _deleteAccount() async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    void finish() {
+      navigator.popUntil((route) => route.isFirst);
+      messenger.showSnackBar(const SnackBar(content: Text('탈퇴가 완료되었어요.')));
+    }
+
     try {
       await _authService.deleteAccount();
-      if (mounted) {
-        setState(() {});
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('탈퇴가 완료되었습니다.')),
-        );
-      }
+      finish();
     } on ReauthenticationRequiredException {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null && !user.isAnonymous) {
-        // 구글 계정 -> 재인증 후 한 번 더 시도
+        // 구글 계정: 다시 로그인(재인증)한 뒤 한 번 더 시도
         try {
           await _authService.reauthenticateWithGoogle();
           await _authService.deleteAccount();
-          if (mounted) {
-            setState(() {});
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('탈퇴가 완료되었습니다.')),
-            );
-          }
+          finish();
         } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('탈퇴 실패: $e')),
-            );
-          }
+          messenger.showSnackBar(SnackBar(content: Text('탈퇴에 실패했어요. $e')));
         }
       } else {
-        // 게스트 계정은 재인증 수단이 없으므로 앱을 다시 시작해달라고 안내
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('보안을 위해 재로그인이 필요합니다. 앱을 껐다 켠 뒤 다시 시도해주세요.'),
-            ),
-          );
+        // 게스트: 재인증 방법이 없습니다. 서버 데이터는 이미 삭제되었으므로
+        // 로그아웃으로 마무리합니다.
+        try {
+          await _authService.signOut();
+          finish();
+        } catch (e) {
+          messenger.showSnackBar(SnackBar(content: Text('탈퇴에 실패했어요. $e')));
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('탈퇴 실패: $e')),
-        );
-      }
+      messenger.showSnackBar(SnackBar(content: Text('탈퇴에 실패했어요. $e')));
     }
   }
 
-  // 아바타 선택 다이얼로그
-  void _showAvatarSelectionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        title: const Text('아바타 선택'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: _defaultAvatars.length +
-                (FirebaseAuth.instance.currentUser?.photoURL != null ? 1 : 0),
-            itemBuilder: (context, index) {
-              final hasGooglePhoto =
-                  FirebaseAuth.instance.currentUser?.photoURL != null;
+  // ------------------------------ UI ------------------------------
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
 
-              final avatarIndex = hasGooglePhoto ? index - 1 : index;
+    // 로그아웃/탈퇴 직후 잠깐 user가 null일 수 있으므로 빈 화면으로 둡니다.
+    if (!_isLoaded || user == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('설정')),
+        body: _isLoaded
+            ? const SizedBox.shrink()
+            : const Center(child: CircularProgressIndicator()),
+      );
+    }
 
-              return GestureDetector(
-                onTap: () async {
-                  // 구글 사진 선택
-                  if (hasGooglePhoto && index == 0) {
-                    setState(() {
-                      _selectedAvatarIndex = avatarIndex;
-                    });
+    final isGuest = user.isAnonymous;
 
-                    await _saveSettings();
-
-                    if (!mounted) return;
-
-                    Navigator.of(this.context).pop();
-
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('구글 프로필 사진으로 변경되었습니다.')),
-                    );
-
-                    return;
-                  }
-
-                  // 기본 아바타 선택
-                  setState(() {
-                    _selectedAvatarIndex = avatarIndex;
-                  });
-
-                  await _saveSettings();
-
-                  final user = FirebaseAuth.instance.currentUser;
-
-                  if (user != null) {
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user.uid)
-                        .set({
-                      'avatar': _defaultAvatars[avatarIndex],
-                    }, SetOptions(merge: true));
-                  }
-
-                  if (!mounted) return;
-
-                  Navigator.of(this.context).pop();
-
-                  ScaffoldMessenger.of(this.context).showSnackBar(
-                    const SnackBar(content: Text('아바타가 변경되었습니다.')),
-                  );
-                },
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 40.r,
-                      backgroundImage: index == 0 &&
-                              FirebaseAuth.instance.currentUser?.photoURL !=
-                                  null
-                          ? NetworkImage(
-                              FirebaseAuth.instance.currentUser!.photoURL!)
-                          : AssetImage(_defaultAvatars[avatarIndex]),
-                    ),
-                    if (_selectedAvatarIndex >= 0 &&
-                        _selectedAvatarIndex == avatarIndex)
-                      Positioned.fill(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(title: const Text('설정')),
+      body: ListView(
+        padding: EdgeInsets.fromLTRB(20.w, 8.h, 20.w, 32.h),
+        children: [
+          // 프로필 헤더
+          Center(
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _showAvatarSheet,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 44.r,
+                        backgroundColor: AppColors.separator,
+                        backgroundImage: _profileImage(user),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
                         child: Container(
+                          padding: EdgeInsets.all(5.w),
                           decoration: BoxDecoration(
+                            color: AppColors.primary,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: _primary,
-                              width: 3,
-                            ),
+                                color: AppColors.background, width: 2),
                           ),
+                          child: Icon(Icons.edit,
+                              size: 13.sp, color: Colors.white),
                         ),
                       ),
-                    if (_selectedAvatarIndex >= 0 &&
-                        _selectedAvatarIndex == avatarIndex)
-                      Icon(
-                        Icons.check_circle,
-                        color: _primary,
-                        size: 24.sp,
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              );
-            },
+                SizedBox(height: 14.h),
+                Text(
+                  _displayName(user),
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  _accountLabel(user),
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
-            child: const Text('취소'),
+          SizedBox(height: 28.h),
+
+          // 프로필 / 계정
+          _SectionCard(
+            children: [
+              _SettingsRow(
+                icon: Icons.person_outline_rounded,
+                title: '닉네임 변경',
+                value: _displayName(user),
+                onTap: _showNicknameDialog,
+              ),
+              _SettingsRow(
+                icon: Icons.account_circle_outlined,
+                title: '아바타 변경',
+                onTap: _showAvatarSheet,
+              ),
+              _SettingsRow(
+                leading: Image.asset(
+                  'assets/images/google_logo.png',
+                  width: 22.w,
+                  height: 22.w,
+                  errorBuilder: (_, __, ___) => Icon(Icons.login,
+                      size: 22.sp, color: AppColors.primary),
+                ),
+                title: isGuest ? 'Google 계정과 연동하기' : '다른 Google 계정으로 전환',
+                onTap: _signInWithGoogle,
+              ),
+            ],
+          ),
+          if (isGuest)
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+              child: Text(
+                '게스트 계정은 로그아웃하면 다시 불러올 수 없어요. '
+                'Google 계정과 연동하면 데이터를 안전하게 지킬 수 있어요.',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  height: 1.4,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          SizedBox(height: 24.h),
+
+          // 로그아웃 / 탈퇴
+          _SectionCard(
+            children: [
+              _SettingsRow(
+                icon: Icons.logout_rounded,
+                title: '로그아웃',
+                destructive: true,
+                showChevron: false,
+                onTap: () => _onLogoutTap(user),
+              ),
+              _SettingsRow(
+                icon: Icons.person_remove_outlined,
+                title: '회원 탈퇴',
+                destructive: true,
+                showChevron: false,
+                onTap: () => _showDeleteAccountDialog(user),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+}
+
+/// 흰 카드 안에 행들이 얇은 선으로 구분되어 나열되는 묶음
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.children});
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: _loadSettingsFuture,
-      builder: (context, snapshot) {
-        debugPrint(
-            'FutureBuilder: ConnectionState -> ${snapshot.connectionState}');
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF7F7FB),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const CircularProgressIndicator(color: _primary),
-                  SizedBox(height: 16.h),
-                  Text('설정을 불러오는 중입니다...',
-                      style: TextStyle(color: Colors.grey[600])),
-                ],
-              ),
-            ),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF7F7FB),
-            appBar: AppBar(
-              title: const Text('설정'),
-              backgroundColor: _primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, color: Colors.red, size: 60.sp),
-                  SizedBox(height: 16.h),
-                  Text(
-                    '설정 로딩에 실패했습니다.',
-                    style:
-                        TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '오류: ${snapshot.error}',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        final User? user = FirebaseAuth.instance.currentUser;
-        final bool isGoogleUser = user != null && !user.isAnonymous;
-        final String? photoUrl = user?.photoURL;
-
-        ImageProvider profileImage;
-
-        if (_selectedAvatarIndex == -1 &&
-            photoUrl != null &&
-            photoUrl.isNotEmpty) {
-          profileImage = NetworkImage(photoUrl);
-        } else {
-          profileImage = AssetImage(_defaultAvatars[_selectedAvatarIndex]);
-        }
-        return Scaffold(
-          backgroundColor: const Color(0xFFF7F7FB),
-          appBar: AppBar(
-            title: const Text('설정',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                )),
-            backgroundColor: Colors.transparent,
-            foregroundColor: _textDark,
-            elevation: 0,
-            flexibleSpace: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFEFEAFF),
-                    Color(0xFFD8D1FF),
-                    Color(0xFFC8C1FD),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          body: ListView(
-            padding: EdgeInsets.all(20.w),
-            children: [
-              SizedBox(height: 8.h),
-
-              // 프로필 카드
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 32.h, horizontal: 20.w), // 여백 조정
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24.r), // 더 둥글게
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: _showAvatarSelectionDialog,
-                      child: Stack(
-                        children: [
-                          Container( // 아바타에 은은한 섀도우 추가
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                )
-                              ]
-                            ),
-                            child: CircleAvatar(
-                              radius: 48.r, // 약간 키움
-                              backgroundImage: profileImage,
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: _primary,
-                                shape: BoxShape.circle,
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(4.w),
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 14.sp,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 14.h),
-
-                    // 닉네임 표시 및 편집 버튼
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _getDisplayName(user),
-                          style: TextStyle(
-                              fontSize: 18.sp, fontWeight: FontWeight.bold),
-                        ),
-                        if (user != null) ...[
-                          SizedBox(width: 6.w),
-                          GestureDetector(
-                            onTap: _showProfileEditDialog,
-                            child: Container(
-                              padding: EdgeInsets.all(4.w),
-                              decoration: BoxDecoration(
-                                color: _primaryLight,
-                                borderRadius: BorderRadius.circular(6.r),
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                size: 14.sp,
-                                color: _primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-
-                    // 소속 정보 표시 (있을 경우에만)
-                    if (_organization.isNotEmpty) ...[
-                      SizedBox(height: 4.h),
-                      Text(
-                        _organization,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-
-                    SizedBox(height: 6.h),
-
-                    // 사용자 ID 표시
-                    SelectableText(
-                      _getUserId(user),
-                      style: TextStyle(
-                        fontSize: 11.sp,
-                        color: Colors.grey[400],
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              SizedBox(height: 16.h),
-
-              // 프로필 편집 버튼 (로그인된 사용자에게만 표시)
-              if (user != null) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: OutlinedButton.icon(
-                    onPressed: _showProfileEditDialog,
-                    icon: const Icon(Icons.person_outline),
-                    label: const Text('프로필 편집'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: _primary,
-                      side: BorderSide(color: _primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999.r),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-              ],
-
-              // 로그인 관련 버튼들 (구글 / 게스트만 표시)
-              if (user == null) ...[
-                // 로그인되지 않은 상태
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: _signInAnonymously,
-                    icon: const Icon(Icons.person),
-                    label: const Text('게스트로 시작하기'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[600],
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999.r),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: _signInWithGoogle,
-                    icon: Image.asset('assets/images/google_logo.png',
-                        height: 20.sp, width: 20.sp),
-                    label: const Text('Google 계정으로 로그인'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ] else if (!isGoogleUser) ...[
-                // 게스트로 로그인된 상태 -> 구글 계정 연동 유도
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: _signInWithGoogle,
-                    icon: Image.asset('assets/images/google_logo.png',
-                        height: 20.sp, width: 20.sp),
-                    label: const Text('Google 계정과 연동하기'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999.r),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: OutlinedButton.icon(
-                    onPressed: _signOut,
-                    icon: const Icon(Icons.logout),
-                    label: const Text('로그아웃'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade600,
-                      side: BorderSide(color: Colors.red.shade200),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ] else ...[
-                // 구글 계정으로 로그인된 상태
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: ElevatedButton.icon(
-                    onPressed: _signInWithGoogle,
-                    icon: Image.asset('assets/images/google_logo.png',
-                        height: 20.sp, width: 20.sp),
-                    label: const Text('다른 Google 계정으로 전환'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black87,
-                      elevation: 0,
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999.r),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48.h,
-                  child: OutlinedButton.icon(
-                    onPressed: _signOut,
-                    icon: const Icon(Icons.logout),
-                    label: const Text('로그아웃'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade600,
-                      side: BorderSide(color: Colors.red.shade200),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-
-              if (user != null) ...[
-                SizedBox(height: 12.h),
-                Center(
-                  child: TextButton(
-                    onPressed: () => _showDeleteAccountDialog(user),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.grey[500],
-                    ),
-                    child: const Text(
-                      '회원 탈퇴',
-                      style: TextStyle(
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-
-              SizedBox(height: 20.h),
-            ],
-          ),
-        );
-      },
+    final items = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      items.add(children[i]);
+      if (i != children.length - 1) {
+        items.add(Padding(
+          padding: EdgeInsets.only(left: 52.w),
+          child: const Divider(),
+        ));
+      }
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: items),
     );
   }
 }
 
-/// 프로필 편집 다이얼로그.
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({
+    this.icon,
+    this.leading,
+    required this.title,
+    this.value,
+    this.destructive = false,
+    this.showChevron = true,
+    required this.onTap,
+  });
+
+  final IconData? icon;
+  final Widget? leading;
+  final String title;
+  final String? value;
+  final bool destructive;
+  final bool showChevron;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = destructive ? AppColors.danger : AppColors.textPrimary;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24.w,
+              child: leading ??
+                  Icon(
+                    icon,
+                    size: 22.sp,
+                    color: destructive ? AppColors.danger : AppColors.primary,
+                  ),
+            ),
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 16.sp, color: color),
+              ),
+            ),
+            if (value != null) ...[
+              SizedBox(width: 8.w),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 120.w),
+                child: Text(
+                  value!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+            if (showChevron)
+              Icon(Icons.chevron_right_rounded,
+                  size: 22.sp, color: const Color(0xFFC7C7CC)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 닉네임 편집 다이얼로그.
 /// 타이핑 중(디바운스 500ms) NicknameService.checkAvailability로 실시간 검증하고,
 /// 저장 시에는 NicknameService.changeNickname으로 최종(형식/금지어/중복) 검증 + 저장한다.
 class _NicknameEditDialog extends StatefulWidget {
@@ -797,14 +588,12 @@ class _NicknameEditDialog extends StatefulWidget {
     required this.user,
     required this.nicknameService,
     required this.authService,
-    required this.primary,
     required this.onSaved,
   });
 
   final User user;
   final NicknameService nicknameService;
   final AuthService authService;
-  final Color primary;
   final VoidCallback onSaved;
 
   @override
@@ -817,7 +606,7 @@ class _NicknameEditDialogState extends State<_NicknameEditDialog> {
 
   bool _isChecking = false;
   bool _isSaving = false;
-  bool? _isAvailable; // null: 아직 확인 전, true: 사용 가능, false: 사용 불가
+  bool? _isAvailable; // null: 확인 전, true: 사용 가능, false: 사용 불가
   String? _checkMessage;
 
   @override
@@ -835,7 +624,6 @@ class _NicknameEditDialogState extends State<_NicknameEditDialog> {
 
   void _onNicknameChanged(String value) {
     _debounce?.cancel();
-
     final trimmed = value.trim();
 
     setState(() {
@@ -846,64 +634,56 @@ class _NicknameEditDialogState extends State<_NicknameEditDialog> {
 
     if (trimmed.isEmpty) return;
 
-    // 지금 쓰고 있는 닉네임 그대로면 굳이 서버까지 안 물어봐도 됨
     if (trimmed == (widget.user.displayName ?? '')) {
       setState(() {
         _isAvailable = true;
-        _checkMessage = '현재 사용 중인 닉네임입니다.';
+        _checkMessage = '현재 사용 중인 닉네임이에요.';
       });
       return;
     }
 
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       setState(() => _isChecking = true);
-
       final result = await widget.nicknameService.checkAvailability(trimmed);
 
-      // 응답이 오는 동안 유저가 텍스트를 더 바꿨을 수 있으니, 지금 텍스트랑 다르면 결과를 버린다.
+      // 응답을 기다리는 동안 입력이 바뀌었다면 결과를 버립니다.
       if (!mounted || _controller.text.trim() != trimmed) return;
 
       setState(() {
         _isChecking = false;
         _isAvailable = result.available;
-        _checkMessage = result.available ? '사용 가능한 닉네임입니다.' : result.message;
+        _checkMessage = result.available ? '사용 가능한 닉네임이에요.' : result.message;
       });
     });
   }
 
   Future<void> _save() async {
     final newNickname = _controller.text.trim();
-
     setState(() => _isSaving = true);
     try {
-      // 실시간 체크는 참고용일 뿐이고, 실제 확정(중복 재확인 포함)은
-      // 여기서 changeNickname 트랜잭션이 최종적으로 처리한다.
+      // 실시간 체크는 참고용이고, 최종 확정(중복 재확인 포함)은 트랜잭션이 처리합니다.
       await widget.nicknameService.changeNickname(
         uid: widget.user.uid,
         newNickname: newNickname,
       );
-
-      // 화면 표시용 displayName도 함께 맞춰준다 (_getDisplayName이 이 값을 씀).
       await widget.authService.updateDisplayName(newNickname);
       widget.onSaved();
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('프로필이 업데이트되었습니다.')),
+          const SnackBar(content: Text('닉네임을 변경했어요.')),
         );
       }
     } on NicknameException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.message)));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('프로필 업데이트 실패: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('변경에 실패했어요. $e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -914,22 +694,18 @@ class _NicknameEditDialogState extends State<_NicknameEditDialog> {
   Widget build(BuildContext context) {
     Color statusColor;
     if (_isAvailable == true) {
-      statusColor = Colors.green[700]!;
+      statusColor = const Color(0xFF248A3D);
     } else if (_isAvailable == false) {
-      statusColor = Colors.red[700]!;
+      statusColor = AppColors.danger;
     } else {
-      statusColor = Colors.grey[600]!;
+      statusColor = AppColors.textSecondary;
     }
 
-    // 명시적으로 사용 불가로 확인된 경우에만 저장을 막는다.
-    // (아직 확인 전이거나 확인 중이어도 저장은 가능 - 최종 검증은 서버에서 함)
+    // 사용 불가로 확인된 경우에만 저장을 막습니다. (최종 검증은 서버에서)
     final canSave = !_isSaving && _isAvailable != false;
 
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      title: const Text('프로필 편집'),
+      title: const Text('닉네임 변경'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -937,40 +713,30 @@ class _NicknameEditDialogState extends State<_NicknameEditDialog> {
           TextField(
             controller: _controller,
             onChanged: _onNicknameChanged,
+            autofocus: true,
             decoration: InputDecoration(
-              labelText: '닉네임',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
               hintText: '사용할 닉네임을 입력하세요',
               suffixIcon: Padding(
-                padding: EdgeInsets.all(14.w),
+                padding: const EdgeInsets.all(14),
                 child: SizedBox(
-                  width: 16.w,
-                  height: 16.w,
-                  child: Visibility(
-                    visible: _isChecking,
-                    maintainSize: true,
-                    maintainAnimation: true,
-                    maintainState: true,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: widget.primary,
-                    ),
-                  ),
+                  width: 16,
+                  height: 16,
+                  child: _isChecking
+                      ? const CircularProgressIndicator(strokeWidth: 2)
+                      : null,
                 ),
               ),
             ),
           ),
-          SizedBox(height: 6.h),
+          const SizedBox(height: 8),
           SizedBox(
-            height: 20.h,
+            height: 20,
             width: double.infinity,
             child: Text(
               _checkMessage ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12.sp, color: statusColor),
+              style: TextStyle(fontSize: 12, color: statusColor),
             ),
           ),
         ],
@@ -978,24 +744,15 @@ class _NicknameEditDialogState extends State<_NicknameEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
           child: const Text('취소'),
         ),
-        ElevatedButton(
+        FilledButton(
           onPressed: canSave ? _save : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: widget.primary,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-          ),
           child: _isSaving
-              ? SizedBox(
-                  width: 18.w,
-                  height: 18.w,
-                  child: const CircularProgressIndicator(
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.white,
                   ),

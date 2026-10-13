@@ -3,23 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>975925310656-4510dmhj37bsuejeq1cc1ml9da7eibjg.apps.googleusercontent.com</string>
+	<string>224869144778-pucl56isu2g08qis7rms7dtmnq267hv4.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.975925310656-4510dmhj37bsuejeq1cc1ml9da7eibjg</string>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>975925310656-8dtahr5q159n88gjoruf9rq7n71r9o29.apps.googleusercontent.com</string>
+	<string>com.googleusercontent.apps.224869144778-pucl56isu2g08qis7rms7dtmnq267hv4</string>
 	<key>API_KEY</key>
-	<string>AIzaSyA1ic66Exdx-0tw2KmEPdZMLooeKvgmrxQ</string>
+	<string>AIzaSyC6xioi-l_wIYmqhKO7HBHmHdwrpJZVoqI</string>
 	<key>GCM_SENDER_ID</key>
-	<string>975925310656</string>
+	<string>224869144778</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.easyenglish</string>
+	<string>com.easyenglishmate</string>
 	<key>PROJECT_ID</key>
-	<string>flutter-easyenglish</string>
+	<string>easyenglishmate</string>
 	<key>STORAGE_BUCKET</key>
-	<string>flutter-easyenglish.firebasestorage.app</string>
+	<string>easyenglishmate.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:975925310656:ios:894e2aceabf063c8b2e925</string>
+	<string>1:224869144778:ios:f8972f71b23ae59547fc33</string>
 </dict>
 </plist>
